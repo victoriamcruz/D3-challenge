@@ -1,77 +1,190 @@
-// data
-var dataArray = [1, 2, 3];
-var dataCategories = ["one", "two", "three"];
+// Setting the SVG perimeter
+let svgWidth = 1000;
+let svgHeight = 500;
 
-// svg container
-var height = 600;
-var width = 1000;
-
-// margins
-var margin = {
-  top: 50,
-  right: 50,
-  bottom: 50,
-  left: 50
+// Setting the margins that will be used to get a chart area
+let margin = {
+    top: 20,
+    right: 40,
+    bottom: 80,
+    left: 100
 };
 
-// chart area minus margins
-var chartHeight = height - margin.top - margin.bottom;
-var chartWidth = width - margin.left - margin.right;
+// Chart area
+let width = svgWidth - margin.left - margin.right;
+let height = svgHeight - margin.top - margin.bottom;
 
-// create svg container
-var svg = d3.select("body").append("svg")
-    .attr("height", height)
-    .attr("width", width);
+// Create an SVG wrapper, append an SVG group, and shift the group
+let svg = d3.select('.chart')
+    .append('svg')
+    .attr('width', svgWidth)
+    .attr('height', svgHeight);
 
-// shift everything over by the margins
-var chartGroup = svg.append("g")
-    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+// Append an SVG Group - shift the group
+let chartGroup = svg.append('g')
+    .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-// scale y to chart height
-var yScale = d3.scaleLinear()
-    .domain([0, d3.max(dataArray)])
-    .range([chartHeight, 0]);
+// Initial Params
+// Y axis is going to be Obesity
+// X axis is going to be Income or it's going to be healthcare
+let chosenX = 'income';
 
-// scale x to chart width
-var xScale = d3.scaleBand()
-    .domain(dataCategories)
-    .range([0, chartWidth])
-    .padding(0.1);
+// Create a function that will go through and update the x_scale upon clicking on the axis label
+function xScale(HealthData, chosenX) {
+    // create linear scale
+    let xLinearScale = d3.scaleLinear()
+        .domain([d3.min(HealthData, d => d[chosenX]) * 0.7 ,d3.max(HealthData, d=> d[chosenX]) * 1.3])
+        .range([0, width]);
+    
+    return xLinearScale;
+}
 
-// create axes
-var yAxis = d3.axisLeft(yScale);
-var xAxis = d3.axisBottom(xScale);
+// Function for rendering x-Axis, whenever we have a click event
+function renderAxes(newXScale, xAxis) {
+    let bottomAxis = d3.axisBottom(newXScale); 
+    xAxis.transition()
+        .duration(1000)
+        .call(bottomAxis);
+    return xAxis;
+};
 
-// set x to the bottom of the chart
-chartGroup.append("g")
-    .attr("transform", `translate(0, ${chartHeight})`)
-    .call(xAxis);
+// functoin used for updating the circles group with a transition to new circles
+function renderCircles(circlesGroup, newXScale, chosenX) {
+    circlesGroup.transition()
+        .duration(1000)
+        .attr("cx", d => newXScale(d[chosenX]))
+    
+    return circlesGroup;
+};
 
-// set y to the y axis
-chartGroup.append("g")
-    .call(yAxis);
+// update the circles group with a new tooltip
+function updateToolTip(chosenX, circlesGroup) {
+    let label;
 
-// Create the rectangles using data binding
-var barsGroup = chartGroup.selectAll("rect")
-    .data(dataArray)
-    .enter()
-    .append("rect")
-    .attr("x", (d, i) => xScale(dataCategories[i]))
-    .attr("y", d => yScale(d))
-    .attr("width", xScale.bandwidth())
-    .attr("height", d => chartHeight - yScale(d))
-    .attr("fill", "green");
+    if (chosenX === "income") {
+        label = 'Income:'
+    }
+    else {
+        label = 'HealthCare'
+    }
 
-// Create the event listeners with transitions
-barsGroup.on("mouseover", function() {
-  d3.select(this)
-            .transition()
-            .duration(500)
-            .attr("fill", "red");
-})
-    .on("mouseout", function() {
-      d3.select(this)
-            .transition()
-            .duration(500)
-            .attr("fill", "green");
+    let toolTip = d3.tip()
+        .attr("class", "tooltip")
+        .offset([80, -60])
+        .html(function(d) {
+            return (`${d.rockband}<br><br>${label} ${d[chosenX]}`);
+        });
+    
+    circlesGroup.call(toolTip);
+
+    circlesGroup.on("mouseover", function(data) {
+        toolTip.show(data);
+    })
+    .on("mouseout", function(data) {
+        toolTip.hide(data);
     });
+    return circlesGroup
+}
+
+d3.csv('../data.csv').then(function(HealthData) {
+
+    HealthData.forEach(function(data) {
+        data.income = +data.income;
+        data.obesity = +data.obesity;
+        data.healthcare = +data.healthcare
+    })
+
+    let xLinearScale = xScale(HealthData, chosenX);
+
+    let yLinearScale = d3.scaleLinear()
+        .domain([0, d3.max(HealthData, d=>d.healthcare)])
+        .range([height, 0]);
+
+    // just for the beginning
+    let bottomAxis = d3.axisBottom(xLinearScale);
+    let leftAxis = d3.axisLeft(yLinearScale);
+
+    let xAxis = chartGroup.append("g")
+        .classed("x-axis", true)
+        .attr("transform", `translate(0,${height})`)
+        .call(bottomAxis);
+    
+    // append y axis
+    chartGroup.append("g")
+        .call(leftAxis);
+    
+    // append initial circles 
+    let circlesGroup = chartGroup.selectAll("circle")
+        .data(hairData)
+        .enter()
+        .append("circle")
+        .attr("cx", d => xLinearScale(d[chosenX]))
+        .attr("cy", d => yLinearScale(d.num_hits))
+        .attr("r", 20)
+        .attr("fill", "blue")
+        .attr("opacity", "0.5")
+    
+    let labelsGroup = chartGroup.append("g")
+        .attr("transform", `translate(${width / 2}, ${height + 20})`)
+    
+    let hairLengthLabel = labelsGroup.append("text")
+        .attr("x", 0)
+        .attr("y", 20)
+        .attr("value", "hair_length")
+        .classed("active", true)
+        .text("Hair Metal Band Hair Length (Inches)");
+    
+    let albumsLabel = labelsGroup.append("text")
+        .attr("x", 0)
+        .attr("y", 40)
+        .attr("value", "num_albums")
+        .classed("inactive", true)
+        .text("# of Albums Released");
+    
+    // Set up y axis label
+    chartGroup.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .classed("axis-text", true)
+        .text("Number of Billboard 500 Hits");
+    
+    // updateToolTip
+    circlesGroup = updateToolTip(chosenX, circlesGroup)
+
+    labelsGroup.selectAll("text")
+        .on("click", function() {
+            let value = d3.select(this).attr("value");
+            if (value !== chosenX) {
+                chosenX = value;
+
+                console.log(chosenX);
+
+                xLinearScale = xScale(HealthData, chosenX);
+                xAxis = renderAxes(xLinearScale, xAxis);
+                circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenX);
+                circlesGroup = updateToolTip(chosenX, circlesGroup);
+
+
+                if (chosenX === "num_albums") {
+                    albumsLabel
+                        .classed("active", true)
+                        .classed("inactive", false);
+                    hairLengthLabel
+                        .classed("active", false)
+                        .classed("inactive", true);
+                }
+                else {
+                    albumsLabel
+                        .classed("active", false)
+                        .classed("inactive", true);
+                    hairLengthLabel
+                        .classed("active", true)
+                        .classed("inactive", false);
+                }
+            }
+        })
+}).catch(function(error) {
+    console.log(error);
+})
