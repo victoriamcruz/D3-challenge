@@ -15,7 +15,7 @@ let width = svgWidth - margin.left - margin.right;
 let height = svgHeight - margin.top - margin.bottom;
 
 // Create an SVG wrapper, append an SVG group, and shift the group
-let svg = d3.select('.chart')
+let svg = d3.select('.scatter')
     .append('svg')
     .attr('width', svgWidth)
     .attr('height', svgHeight);
@@ -65,14 +65,14 @@ function updateToolTip(chosenX, circlesGroup) {
         label = 'Income:'
     }
     else {
-        label = 'HealthCare'
+        label = 'Poverty'
     }
 
     let toolTip = d3.tip()
         .attr("class", "tooltip")
         .offset([80, -60])
         .html(function(d) {
-            return (`${d.rockband}<br><br>${label} ${d[chosenX]}`);
+            return (`${d.state}<br><br>${label} ${d[chosenX]}`);
         });
     
     circlesGroup.call(toolTip);
@@ -86,8 +86,10 @@ function updateToolTip(chosenX, circlesGroup) {
     return circlesGroup
 }
 
-d3.csv('../data.csv').then(function(HealthData) {
+d3.csv('data.csv').then(function(HealthData) {
+        console.log(HealhtData)
 
+        
     HealthData.forEach(function(data) {
         data.income = +data.income;
         data.obesity = +data.obesity;
@@ -115,7 +117,7 @@ d3.csv('../data.csv').then(function(HealthData) {
     
     // append initial circles 
     let circlesGroup = chartGroup.selectAll("circle")
-        .data(hairData)
+        .data(HealthData)
         .enter()
         .append("circle")
         .attr("cx", d => xLinearScale(d[chosenX]))
@@ -127,19 +129,19 @@ d3.csv('../data.csv').then(function(HealthData) {
     let labelsGroup = chartGroup.append("g")
         .attr("transform", `translate(${width / 2}, ${height + 20})`)
     
-    let hairLengthLabel = labelsGroup.append("text")
+    let incomeLabel = labelsGroup.append("text")
         .attr("x", 0)
         .attr("y", 20)
-        .attr("value", "hair_length")
+        .attr("value", "income")
         .classed("active", true)
-        .text("Hair Metal Band Hair Length (Inches)");
+        .text("Income Level");
     
-    let albumsLabel = labelsGroup.append("text")
+    let povertyLabel = labelsGroup.append("text")
         .attr("x", 0)
         .attr("y", 40)
-        .attr("value", "num_albums")
+        .attr("value", "poverty")
         .classed("inactive", true)
-        .text("# of Albums Released");
+        .text("Poverty Level");
     
     // Set up y axis label
     chartGroup.append("text")
@@ -148,7 +150,7 @@ d3.csv('../data.csv').then(function(HealthData) {
         .attr("x", 0 - (height / 2))
         .attr("dy", "1em")
         .classed("axis-text", true)
-        .text("Number of Billboard 500 Hits");
+        .text("Obesity");
     
     // updateToolTip
     circlesGroup = updateToolTip(chosenX, circlesGroup)
@@ -167,24 +169,24 @@ d3.csv('../data.csv').then(function(HealthData) {
                 circlesGroup = updateToolTip(chosenX, circlesGroup);
 
 
-                if (chosenX === "num_albums") {
-                    albumsLabel
+                if (chosenX === "poverty") {
+                    povertyLabel
                         .classed("active", true)
                         .classed("inactive", false);
-                    hairLengthLabel
+                    incomeLabel
                         .classed("active", false)
                         .classed("inactive", true);
                 }
                 else {
-                    albumsLabel
+                    povertyLabel
                         .classed("active", false)
                         .classed("inactive", true);
-                    hairLengthLabel
+                    incomeLabel
                         .classed("active", true)
                         .classed("inactive", false);
                 }
             }
         })
-}).catch(function(error) {
-    console.log(error);
+// }).catch(function(error) {
+//     console.log(error);
 })
