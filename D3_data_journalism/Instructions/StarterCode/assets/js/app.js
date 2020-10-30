@@ -1,13 +1,13 @@
 // Setting the SVG perimeter
-let svgWidth = 1000;
+let svgWidth = 900;
 let svgHeight = 500;
 
 // Setting the margins that will be used to get a chart area
 let margin = {
-    top: 20,
-    right: 40,
-    bottom: 80,
-    left: 100
+    top: 30,
+    right: 50,
+    bottom: 90,
+    left: 80
 };
 
 // Chart area
@@ -15,7 +15,7 @@ let width = svgWidth - margin.left - margin.right;
 let height = svgHeight - margin.top - margin.bottom;
 
 // Create an SVG wrapper, append an SVG group, and shift the group
-let svg = d3.select('.scatter')
+let svg = d3.select('#scatter')
     .append('svg')
     .attr('width', svgWidth)
     .attr('height', svgHeight);
@@ -72,7 +72,7 @@ function updateToolTip(chosenX, circlesGroup) {
         .attr("class", "tooltip")
         .offset([80, -60])
         .html(function(d) {
-            return (`${d.state}<br><br>${label} ${d[chosenX]}`);
+            return (`${d.state}<br>${label} ${d[chosenX]}`);
         });
     
     circlesGroup.call(toolTip);
@@ -87,9 +87,9 @@ function updateToolTip(chosenX, circlesGroup) {
 }
 
 d3.csv('data.csv').then(function(HealthData) {
-        console.log(HealhtData)
+        console.log()
 
-        
+
     HealthData.forEach(function(data) {
         data.income = +data.income;
         data.obesity = +data.obesity;
@@ -100,7 +100,7 @@ d3.csv('data.csv').then(function(HealthData) {
 
     let yLinearScale = d3.scaleLinear()
         .domain([0, d3.max(HealthData, d=>d.healthcare)])
-        .range([height, 0]);
+        .range([height, 5]);
 
     // just for the beginning
     let bottomAxis = d3.axisBottom(xLinearScale);
@@ -108,7 +108,7 @@ d3.csv('data.csv').then(function(HealthData) {
 
     let xAxis = chartGroup.append("g")
         .classed("x-axis", true)
-        .attr("transform", `translate(0,${height})`)
+        .attr("transform", `translate(5,${height})`)
         .call(bottomAxis);
     
     // append y axis
@@ -121,24 +121,24 @@ d3.csv('data.csv').then(function(HealthData) {
         .enter()
         .append("circle")
         .attr("cx", d => xLinearScale(d[chosenX]))
-        .attr("cy", d => yLinearScale(d.num_hits))
-        .attr("r", 20)
-        .attr("fill", "blue")
+        .attr("cy", d => yLinearScale(d.healthcare))
+        .attr("r", 6)
+        .attr("fill", "purple")
         .attr("opacity", "0.5")
     
     let labelsGroup = chartGroup.append("g")
-        .attr("transform", `translate(${width / 2}, ${height + 20})`)
+        .attr("transform", `translate(${width / 2}, ${height + 40})`)
     
     let incomeLabel = labelsGroup.append("text")
         .attr("x", 0)
-        .attr("y", 20)
+        .attr("y", 5)
         .attr("value", "income")
         .classed("active", true)
         .text("Income Level");
     
     let povertyLabel = labelsGroup.append("text")
         .attr("x", 0)
-        .attr("y", 40)
+        .attr("y", 30)
         .attr("value", "poverty")
         .classed("inactive", true)
         .text("Poverty Level");
@@ -187,6 +187,6 @@ d3.csv('data.csv').then(function(HealthData) {
                 }
             }
         })
-// }).catch(function(error) {
-//     console.log(error);
+}).catch(function(error) {
+    console.log(error);
 })
